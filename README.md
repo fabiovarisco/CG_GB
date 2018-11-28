@@ -1,3 +1,3 @@
-# CG GA
+# CG GB
 
-https://github.com/fabiovarisco/CG_GA
+https://github.com/fabiovarisco/CG_GB
