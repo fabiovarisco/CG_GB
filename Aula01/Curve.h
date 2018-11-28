@@ -15,7 +15,7 @@ using namespace std;
 
 static const float CURVE_INC = 0.05;
 static const int CURVES_DISTANCE = 5;
-static const int MAX_Z = 10;
+static const int MAX_Z = 50;
 /*
 struct segment {
 	float *points;

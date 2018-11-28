@@ -215,10 +215,13 @@ void Scene::draw() {
 
 
 	glm::mat4 defaultModel = glm::mat4(1.0f);
-	glm::mat4 carModel = glm::translate(glm::mat4(1.0f), glm::vec3(this->curvePoints->at(0), this->curvePoints->at(1), this->curvePoints->at(2)));
-	carModel = glm::rotate(carModel, (float) glm::radians(90.0f), glm::vec3(0, 1, 0));
-
+	glm::mat4 carModel;
+	//glm::mat4 carModel = glm::translate(glm::mat4(1.0f), glm::vec3(this->curvePoints->at(0), this->curvePoints->at(1), this->curvePoints->at(2)));
+	//carModel = glm::rotate(carModel, (float) glm::radians(90.0f), glm::vec3(0, 1, 0));
+	int curveLength = this->curvePoints->size() / 3;
 	int carIndex = 0;
+	float deltaMovement = 0;
+	float lastMovement = 0;
 	do {
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
@@ -241,17 +244,32 @@ void Scene::draw() {
 		shader->setMat4("model", defaultModel);
 		this->drawMesh(this->mesh, this->materials, this->shader);
 
-		carModel = glm::translate(glm::mat4(1.0f), glm::vec3(this->curvePoints->at(3*carIndex), this->curvePoints->at(3*carIndex + 1), this->curvePoints->at(3*carIndex+2)));
-		carModel = glm::rotate(carModel, (float)glm::radians(90.0f), glm::vec3(0, 1, 0));
+		glm::vec3 carPosition = glm::vec3(this->curvePoints->at(3 * carIndex), this->curvePoints->at(3 * carIndex + 1), this->curvePoints->at(3 * carIndex + 2));
+		glm::vec3 nextCarPosition = glm::vec3(this->curvePoints->at((3 * (carIndex+1)) % curveLength), this->curvePoints->at((3 * (carIndex+1)) % curveLength + 1), this->curvePoints->at((3 * (carIndex + 1)) % curveLength + 2));
+		carModel = glm::translate(glm::mat4(1.0f), carPosition);
+		float angle = atan2f(nextCarPosition[2] - carPosition[2], nextCarPosition[0] - carPosition[0]);
+		carModel = glm::rotate(carModel, -1 * angle + glm::radians(90.0f), glm::vec3(0, 1, 0));
 		shader->setMat4("model", carModel);
+		
 		this->drawMesh(this->carMesh, this->carMaterials, this->shader);
-		this->camera->UpdateCameraPosition(this->curvePoints->at(3 * carIndex), this->curvePoints->at(3 * carIndex + 1) + 20, this->curvePoints->at(3 * carIndex + 2));
-		carIndex++;
+
+		glm::vec3 cameraPos = carPosition + glm::vec3(-20, 20, -20);
+		this->camera->UpdateCameraPosition(cameraPos);
+		this->lightPos = cameraPos;
+		shader->setVec3("lightPos", this->lightPos);
+
+		deltaMovement = currentFrame - lastMovement;
+		if (deltaMovement > 1) {
+			carIndex++;
+			lastMovement = currentFrame;
+			if (carIndex >= curveLength) carIndex = 0;
+		}
+		
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
-		if (carIndex > this->curvePoints->size() / 3) carIndex = 0;
+		
 
 	} // Check if the ESC key was pressed or the window was closed
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
