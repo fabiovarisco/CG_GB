@@ -1,4 +1,7 @@
 #pragma once
+#ifndef MESH
+#define MESH
+
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <vector>
@@ -27,3 +30,4 @@ public:
 	void setGroups(std::vector<Group*> *i_groups);
 };
 
+#endif

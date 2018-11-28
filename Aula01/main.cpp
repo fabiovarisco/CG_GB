@@ -199,10 +199,10 @@ int system_finish() {
 
 	return EXIT_SUCCESS;
 }
-/*
+
 int main() {
 
 	system_glfwInit();
 	system_run();
 	system_finish();
-}*/
+}

@@ -1,4 +1,8 @@
 
+#ifndef GROUP_H
+#define GROUP_H
+
+
 #include <string>
 #include <vector>
 #define GLEW_STATIC
@@ -36,3 +40,5 @@ public:
 
 };
 
+
+#endif // !GROUP_H

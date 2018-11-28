@@ -40,8 +40,10 @@ using namespace std;
 class Scene
 {
 private:
+
+	vector<float>* curvePoints;
 	
-	Camera* camera = new Camera(glm::vec3(0.0f, 0.0f, 15.0f));
+	Camera* camera = new Camera(glm::vec3(0.0f, 10.0f, 0.0f));
 
 	// timing
 	float deltaTime = 0.0f;	// time between current frame and last frame
@@ -54,12 +56,18 @@ private:
 	void static scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 	int setupGLFW();
 	GLFWwindow* window;
+	void setupGroups(Mesh* mesh);
+	void setupMaterials(unordered_map<string, Material*> materials, string base_path);
+	void drawMesh(Mesh *mesh, unordered_map<string, Material*> materials, Shader* shader);
+	void readPoints(string filename);
+
 public:
 	Mesh* mesh;
-	unordered_map<string, Material*> materials;
+	Mesh* carMesh; 
+	unordered_map<string, Material*> materials, carMaterials;
 	Shader* shader;
 	GLuint VAO, vVBO, nVBO, tVBO;
-	int init(string base_path, string obj_filename);
+	int init(string base_path, string obj_filename, string curve_filename);
 	Scene();
 	~Scene();
 	void draw();

@@ -123,9 +123,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="Curve.cpp" />
+    <ClCompile Include="CurveDesigner.cpp" />
     <ClCompile Include="Face.cpp" />
     <ClCompile Include="Group.cpp" />
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="MtlReader.cpp" />
@@ -138,6 +139,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Curve.h" />
+    <ClInclude Include="CurveDesigner.h" />
     <ClInclude Include="Face.h" />
     <ClInclude Include="Group.h" />
     <ClInclude Include="Material.h" />

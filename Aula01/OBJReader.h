@@ -1,4 +1,8 @@
 #pragma once
+#ifndef OBJ_READER
+#define OBJ_READER
+
+
 
 #include <string>
 #include "Mesh.h"
@@ -25,3 +29,4 @@ public:
 	int readNextInt(std::stringstream& stoken);
 };
 
+#endif // !OBJ_READER

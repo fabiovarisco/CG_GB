@@ -89,40 +89,17 @@ int Scene::setupGLFW() {
 
 }
 
-int Scene::init(string base_path, string obj_filename)
-{	
-	globalCamera = camera;
-	if (this->setupGLFW() == -1) {
-		return -1;
-	}
-	
-	OBJReader* reader = new OBJReader();
-	this->mesh = reader->read(base_path + obj_filename);
 
-	MtlReader* mtlReader = new MtlReader();
-	this->materials = mtlReader->readMaterialsFile(base_path + this->mesh->materialsFile);
-	
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-	/*
-	glGenBuffers(1, &vVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, vVBO);
-	glBufferData(GL_ARRAY_BUFFER, mesh->getVertexes().size() * sizeof(glm::vec3), mesh->getVertexes().data(), GL_STATIC_DRAW);
-
-	glGenBuffers(1, &nVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, nVBO);
-	glBufferData(GL_ARRAY_BUFFER, mesh->getNormals().size() * sizeof(glm::vec3), mesh->getNormals().data(), GL_STATIC_DRAW);
-
-	glGenBuffers(1, &tVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, tVBO);
-	glBufferData(GL_ARRAY_BUFFER, mesh->getMappings().size() * sizeof(glm::vec2), mesh->getMappings().data(), GL_STATIC_DRAW);
-	*/
-	for (Group* g : this->mesh->getGroups()) {
+void Scene::setupGroups(Mesh* mesh) {
+	for (Group* g : mesh->getGroups()) {
 		g->setup(mesh);
 	}
+}
 
-	//for (Material* m : this->materials.begin()) {
-	for (auto& it : this->materials) {
+
+void Scene::setupMaterials(unordered_map<string, Material*> materials, string base_path) {
+
+	for (auto& it : materials) {
 		Material* m = it.second;
 		glGenTextures(1, &m->textureId);
 		glBindTexture(GL_TEXTURE_2D, m->textureId);
@@ -144,12 +121,72 @@ int Scene::init(string base_path, string obj_filename)
 		}
 		else
 		{
-			
+
 			std::cout << "Failed to load texture: " << filepath << std::endl;
 		}
 		stbi_image_free(data);
 	}
+}
 
+void Scene::readPoints(string filename) {
+	this->curvePoints = new vector<float>();
+	ifstream arq(filename);
+	while (!arq.eof()) {
+		std::string line;
+		getline(arq, line);
+		std::stringstream sline;
+		sline << line;
+		std::string temp;
+		while (sline >> temp) {
+			this->curvePoints->push_back(atof(temp.c_str()));
+		}
+	}
+}
+
+int Scene::init(string base_path, string obj_filename, string curve_filename)
+{	
+	
+	if (this->setupGLFW() == -1) {
+		return -1;
+	}
+	
+	OBJReader* reader = new OBJReader();
+	this->mesh = reader->read(base_path + obj_filename);
+
+	this->carMesh = reader->read(".\\VW_Bus.obj");
+
+	MtlReader* mtlReader = new MtlReader();
+	this->materials = mtlReader->readMaterialsFile(base_path + this->mesh->materialsFile);
+
+	this->carMaterials = mtlReader->readMaterialsFile(this->carMesh->materialsFile);
+
+	this->readPoints(curve_filename);
+
+	camera = new Camera(glm::vec3(this->curvePoints->at(0), this->curvePoints->at(1) + 20, this->curvePoints->at(2) - 20));
+
+	globalCamera = camera;
+	
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+	/*
+	glGenBuffers(1, &vVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, vVBO);
+	glBufferData(GL_ARRAY_BUFFER, mesh->getVertexes().size() * sizeof(glm::vec3), mesh->getVertexes().data(), GL_STATIC_DRAW);
+
+	glGenBuffers(1, &nVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, nVBO);
+	glBufferData(GL_ARRAY_BUFFER, mesh->getNormals().size() * sizeof(glm::vec3), mesh->getNormals().data(), GL_STATIC_DRAW);
+
+	glGenBuffers(1, &tVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, tVBO);
+	glBufferData(GL_ARRAY_BUFFER, mesh->getMappings().size() * sizeof(glm::vec2), mesh->getMappings().data(), GL_STATIC_DRAW);
+	*/
+	setupGroups(this->mesh);
+	setupGroups(this->carMesh);
+
+	setupMaterials(this->materials, base_path);
+	setupMaterials(this->carMaterials, base_path);
+	
 	shader = new Shader("vertexShader2.txt", "fragmentShader2.txt");
 	shader->use();
 	shader->setFloat4("inColor", 0.0f, 0.0f, 1.0f, 1.0f);
@@ -176,6 +213,12 @@ Scene::~Scene()
 
 void Scene::draw() {
 
+
+	glm::mat4 defaultModel = glm::mat4(1.0f);
+	glm::mat4 carModel = glm::translate(glm::mat4(1.0f), glm::vec3(this->curvePoints->at(0), this->curvePoints->at(1), this->curvePoints->at(2)));
+	carModel = glm::rotate(carModel, (float) glm::radians(90.0f), glm::vec3(0, 1, 0));
+
+	int carIndex = 0;
 	do {
 		float currentFrame = glfwGetTime();
 		deltaTime = currentFrame - lastFrame;
@@ -195,23 +238,35 @@ void Scene::draw() {
 		shader->setVec3("viewPos", camera->Position);
 		glBindVertexArray(VAO);
 
-		for (Group* g : mesh->getGroups()) {
-			
-			if (this->materials.find(g->getMaterial()) != this->materials.end()) {
-				g->draw(this->materials[g->getMaterial()], shader);
-			}
-			else {
-				g->draw(NULL, shader);
-			}
-		}
+		shader->setMat4("model", defaultModel);
+		this->drawMesh(this->mesh, this->materials, this->shader);
 
+		carModel = glm::translate(glm::mat4(1.0f), glm::vec3(this->curvePoints->at(3*carIndex), this->curvePoints->at(3*carIndex + 1), this->curvePoints->at(3*carIndex+2)));
+		carModel = glm::rotate(carModel, (float)glm::radians(90.0f), glm::vec3(0, 1, 0));
+		shader->setMat4("model", carModel);
+		this->drawMesh(this->carMesh, this->carMaterials, this->shader);
+		this->camera->UpdateCameraPosition(this->curvePoints->at(3 * carIndex), this->curvePoints->at(3 * carIndex + 1) + 20, this->curvePoints->at(3 * carIndex + 2));
+		carIndex++;
 		// Swap buffers
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
+		if (carIndex > this->curvePoints->size() / 3) carIndex = 0;
 
 	} // Check if the ESC key was pressed or the window was closed
 	while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
 		glfwWindowShouldClose(window) == 0);
 
+}
+
+void Scene::drawMesh(Mesh *mesh, unordered_map<string, Material*> materials, Shader* shader) {
+	for (Group* g : mesh->getGroups()) {
+
+		if (materials.find(g->getMaterial()) != materials.end()) {
+			g->draw(materials[g->getMaterial()], shader);
+		}
+		else {
+			g->draw(NULL, shader);
+		}
+	}
 }
